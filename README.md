@@ -120,7 +120,7 @@ npm test
 | `test:g2pm` | Mandarin g2p == g2pM (10/10, incl. polyphone disambiguation) |
 | `test:standalone` | English text→phones+words == charsiu oracle (Node) |
 | `test:standalone-zh` | Mandarin text→phones+words == charsiu oracle (Node) |
-| `test:browser` | English alignment in headless Chrome via onnxruntime-web |
+| `test:browser` | English + Mandarin alignment in headless Chrome via onnxruntime-web |
 
 `npm test` also type-checks the public API against the built `.d.ts` as a consumer.
 
@@ -152,9 +152,20 @@ npm run convert charsiu/en_w2v2_fc_10ms    # PyTorch -> models/<name>/model.onnx
 npm run quantize en_w2v2_fc_10ms           # -> model_quantized.onnx (single file)
 ```
 
-For Mandarin in the browser, construct `G2pM` + `PhonemizerZh` and fetch the
-`g2pm_*` assets and `vocab_zh.json` yourself — the bundled `assets-web` loader
-currently covers English only.
+Mandarin works in the browser too — same wiring with the zh building blocks:
+
+```js
+import { G2pM, PhonemizerZh, ForcedAligner } from 'charsiu-js/core';
+import { loadG2pmAssets, loadPhoneVocabZh, decodeToMono16k } from 'charsiu-js/assets-web';
+import * as ort from 'onnxruntime-web';
+
+const phonemizer = new PhonemizerZh(new G2pM(await loadG2pmAssets('/assets/')),
+                                    await loadPhoneVocabZh('/assets/'));
+const session = await ort.InferenceSession.create('/zh_model_quantized.onnx');
+const aligner = new ForcedAligner({ session, ort, phonemizer });
+```
+
+The bundled demo (`npm run serve`) has an English/Mandarin toggle.
 
 ## How it works / internals
 

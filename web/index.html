@@ -24,9 +24,13 @@
   <p>Neural forced alignment (wav2vec2) running fully client-side — no server. Quantized model ~123 MB.</p>
   <label>Transcript<br><textarea id="text">the quick brown fox jumps over the lazy dog</textarea></label>
   <div class="controls">
+    <select id="lang" title="language">
+      <option value="en">English</option>
+      <option value="zh">中文 (Mandarin)</option>
+    </select>
     <input type="file" id="audio" accept="audio/*" />
     <button id="run">Align</button>
-    <span id="status">uses sample/sample.wav if no file chosen</span>
+    <span id="status">uses the bundled sample if no file chosen</span>
   </div>
   <div id="out"></div>
   <script type="module" src="/web/demo.mjs"></script>

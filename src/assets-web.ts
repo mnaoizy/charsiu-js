@@ -1,6 +1,6 @@
-// Browser asset loader (fetch-based) for the English g2p + aligner.
+// Browser asset loader (fetch-based) for the g2p + aligner (English + Mandarin).
 // baseUrl points to the directory containing cmudict.json, g2p_gru.bin, etc.
-import type { G2pAssets } from './types.js';
+import type { G2pAssets, G2pmAssets } from './types.js';
 
 export async function loadG2pAssets(baseUrl = './assets/'): Promise<G2pAssets> {
   const j = (f: string) => fetch(baseUrl + f).then((r) => r.json());
@@ -13,6 +13,20 @@ export async function loadG2pAssets(baseUrl = './assets/'): Promise<G2pAssets> {
 
 export function loadPhoneVocab(baseUrl = './assets/'): Promise<Record<string, number>> {
   return fetch(baseUrl + 'vocab_en.json').then((r) => r.json());
+}
+
+// Mandarin (g2pM) assets.
+export async function loadG2pmAssets(baseUrl = './assets/'): Promise<G2pmAssets> {
+  const j = (f: string) => fetch(baseUrl + f).then((r) => r.json());
+  const [cedict, char2idx, idx2class, manifest, binBuf] = await Promise.all([
+    j('g2pm_cedict.json'), j('g2pm_char2idx.json'), j('g2pm_idx2class.json'), j('g2pm_lstm.json'),
+    fetch(baseUrl + 'g2pm_lstm.bin').then((r) => r.arrayBuffer()),
+  ]);
+  return { cedict, char2idx, idx2class, lstm: { manifest, data: new Float32Array(binBuf) } };
+}
+
+export function loadPhoneVocabZh(baseUrl = './assets/'): Promise<Record<string, number>> {
+  return fetch(baseUrl + 'vocab_zh.json').then((r) => r.json());
 }
 
 // Decode any browser-supported audio file to 16 kHz mono Float32 in [-1, 1].
