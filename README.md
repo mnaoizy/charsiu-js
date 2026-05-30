@@ -43,7 +43,7 @@ from a hosted, INT8-quantized copy: https://huggingface.co/mnaoizyyy/charsiu-js-
 
 To use your own model, pass `modelPath` (local file) or `modelUrl`. The upstream
 PyTorch weights and tokenizers live at https://huggingface.co/charsiu — convert
-them to ONNX with the scripts (see [Model setup](#model-setup)).
+them to ONNX with the scripts (see [Model setup](#model-setup-custom--your-own-models)).
 
 ## Usage — Node
 
@@ -77,17 +77,23 @@ const waveform = await decodeToMono16k(await file.arrayBuffer()); // any audio f
 const { phones, words } = await aligner.align(waveform, transcript);
 ```
 
-A runnable demo lives in `web/`:
+A runnable demo lives in `web/` (the page imports the compiled `dist/`):
 
 ```bash
-npm run convert && npm run quantize   # produce the local model
+npm run build                         # compile src -> dist
+npm run convert && npm run quantize   # produce a local model (needs the Python venv)
 npm run serve                         # http://localhost:8080/web/index.html
 ```
+
+(Or skip convert/quantize and edit `MODEL_URL` in `web/demo.mjs` to the hosted
+model on the Hub.)
 
 ## API
 
 - `createNodeAligner({ modelPath?, modelUrl?, cacheDir? }) → Promise<ForcedAligner>`
-  (Node) — wires onnxruntime-node + bundled assets; downloads & caches `modelUrl`.
+  (Node) — wires onnxruntime-node + bundled assets; with no options it downloads
+  and caches the hosted default model. `createNodeAlignerZh(...)` is the Mandarin
+  equivalent.
 - `new ForcedAligner({ session, ort, phonemizer, silThreshold?, resolution? })` —
   runtime-agnostic core.
 - `aligner.align(waveform, text) → { phones, words, phoneIds }` — segments are
@@ -110,9 +116,13 @@ npm test
 | Test | Checks |
 |------|--------|
 | `test:onnx` | ONNX frame logits == PyTorch |
-| `test:g2p` | g2p output == g2p_en (15/15, incl. OOV, numbers, punctuation) |
-| `test:standalone` | text→phones+words == charsiu oracle (Node) |
-| `test:browser` | same, in headless Chrome via onnxruntime-web |
+| `test:g2p` | English g2p == g2p_en (15/15, incl. OOV, numbers, punctuation) |
+| `test:g2pm` | Mandarin g2p == g2pM (10/10, incl. polyphone disambiguation) |
+| `test:standalone` | English text→phones+words == charsiu oracle (Node) |
+| `test:standalone-zh` | Mandarin text→phones+words == charsiu oracle (Node) |
+| `test:browser` | English alignment in headless Chrome via onnxruntime-web |
+
+`npm test` also type-checks the public API against the built `.d.ts` as a consumer.
 
 ## Languages
 
@@ -121,7 +131,8 @@ npm test
   pronunciation; the POS tagger g2p_en uses to disambiguate them isn't ported yet.
 - **Mandarin (Standard Chinese)** — complete. g2p is a full port of `g2pM`
   (CEDICT + a BiLSTM that disambiguates polyphonic characters, e.g. 长→cháng/zhǎng,
-  行→xíng/háng). Uses `charsiu/zh_w2v2_tiny_fc_10ms` (~90 MB, 210 tonal phones).
+  行→xíng/háng). Uses `charsiu/zh_w2v2_tiny_fc_10ms` (~40 MB quantized, 210 tonal
+  phones).
 
 ```js
 import { createNodeAlignerZh } from 'charsiu-js';
@@ -141,8 +152,9 @@ npm run convert charsiu/en_w2v2_fc_10ms    # PyTorch -> models/<name>/model.onnx
 npm run quantize en_w2v2_fc_10ms           # -> model_quantized.onnx (single file)
 ```
 
-For the browser, build a `ForcedAligner` with `G2pM` + `PhonemizerZh` and the zh
-assets, exactly like the English browser example.
+For Mandarin in the browser, construct `G2pM` + `PhonemizerZh` and fetch the
+`g2pm_*` assets and `vocab_zh.json` yourself — the bundled `assets-web` loader
+currently covers English only.
 
 ## How it works / internals
 
@@ -155,9 +167,19 @@ See [`FINDINGS.md`](./FINDINGS.md) for the full design notes: model architecture
 Source is TypeScript in `src/`; `npm run build` compiles it to `dist/` (ESM +
 `.d.ts`). `npm test` builds, runs the Python-parity tests (ONNX/g2p/alignment in
 Node and in headless Chrome), and type-checks the public API as a consumer would.
-`npm run typecheck` checks types without emitting. The Python scripts in `scripts/`
-(model conversion, quantization, asset export, oracle generation) need the
-`.venv` from the reproduce steps above.
+`npm run typecheck` checks types without emitting.
+
+The Python scripts in `scripts/` (model conversion, quantization, asset export,
+oracle generation) need a virtualenv with the ML deps:
+
+```bash
+python -m venv .venv
+.venv/bin/pip install torch transformers optimum onnx onnxruntime onnxscript \
+  huggingface_hub numpy soundfile librosa nltk g2p_en g2pM praatio
+```
+
+The g2p assets in `assets/` are generated from these (`npm run export-g2p`); the
+oracle JSONs the JS tests compare against are produced by `scripts/*_oracle.py`.
 
 ## License
 
