@@ -32,43 +32,29 @@ Written in TypeScript; ships compiled ESM + `.d.ts`, so it's type-safe out of th
 
 ## What you need besides the package
 
-`npm install charsiu-js` gives you the code and the g2p data. Two more things:
+The g2p data ships inside the package. You need **an onnxruntime** (peer
+dependency) — `onnxruntime-node` for Node, or `onnxruntime-web` for the browser
+(https://onnxruntime.ai/).
 
-1. **An onnxruntime** (peer dependency) — `onnxruntime-node` for Node, or
-   `onnxruntime-web` for the browser. https://onnxruntime.ai/
-2. **An acoustic ONNX model** (not bundled; ~123 MB EN / ~90 MB ZH). The upstream
-   charsiu weights live on the Hugging Face Hub but are PyTorch, so convert them
-   to ONNX (see [Model setup](#model-setup)) or host a converted copy yourself:
-   - English: https://huggingface.co/charsiu/en_w2v2_fc_10ms
-   - Mandarin: https://huggingface.co/charsiu/zh_w2v2_tiny_fc_10ms
-   - tokenizers / other languages: https://huggingface.co/charsiu
+The acoustic ONNX model is **not** bundled (it's large), but in Node it's
+**downloaded automatically** on first use (and cached in `~/.cache/charsiu-js`)
+from a hosted, INT8-quantized copy: https://huggingface.co/mnaoizyyy/charsiu-js-models
+(EN ~123 MB, ZH ~40 MB). So `createNodeAligner()` just works with no setup.
 
-   Pass the model via `modelPath` (local file) or `modelUrl` (downloaded + cached).
-
-## Model setup
-
-The g2p assets (~7.5 MB) ship inside the package. The acoustic model does **not**
-(~123 MB quantized) — point the aligner at one you host or convert:
-
-```bash
-# convert + quantize charsiu/en_w2v2_fc_10ms -> models/en_w2v2_fc_10ms/
-npm run convert charsiu/en_w2v2_fc_10ms
-npm run quantize en_w2v2_fc_10ms
-```
-
-Then host `model_quantized.onnx` (e.g. on the Hugging Face Hub) and pass its URL,
-or pass a local path.
+To use your own model, pass `modelPath` (local file) or `modelUrl`. The upstream
+PyTorch weights and tokenizers live at https://huggingface.co/charsiu — convert
+them to ONNX with the scripts (see [Model setup](#model-setup)).
 
 ## Usage — Node
 
 ```js
 import { createNodeAligner } from 'charsiu-js';
 
-const aligner = await createNodeAligner({
-  // one of:
-  modelPath: './models/en_w2v2_fc_10ms/model_quantized.onnx',
-  // modelUrl: 'https://huggingface.co/<you>/charsiu-en-onnx/resolve/main/model_quantized.onnx',
-});
+// model auto-downloads from the Hugging Face Hub on first use, then caches
+const aligner = await createNodeAligner();
+// ...or bring your own:
+//   createNodeAligner({ modelPath: './model_quantized.onnx' })
+//   createNodeAligner({ modelUrl: 'https://…/model_quantized.onnx' })
 
 // waveform: Float32Array, 16 kHz mono, samples in [-1, 1]
 const { phones, words } = await aligner.align(waveform, 'the quick brown fox');
@@ -139,9 +125,20 @@ npm test
 
 ```js
 import { createNodeAlignerZh } from 'charsiu-js';
-const zh = await createNodeAlignerZh({ modelPath: './models/zh_w2v2_tiny_fc_10ms/model.onnx' });
+const zh = await createNodeAlignerZh();   // model auto-downloads on first use
 const { phones, words } = await zh.align(waveform, '快速的棕色狐狸');
 // phones: [[0, .08,'k'], [.08,.22,'uai4'], …]   words: [[0,.22,'快'], …]
+```
+
+## Model setup (custom / your own models)
+
+The default models are downloaded from the Hub automatically. To build your own
+(e.g. for another charsiu language), convert + quantize with the scripts, then
+pass the result via `modelPath`/`modelUrl`:
+
+```bash
+npm run convert charsiu/en_w2v2_fc_10ms    # PyTorch -> models/<name>/model.onnx
+npm run quantize en_w2v2_fc_10ms           # -> model_quantized.onnx (single file)
 ```
 
 For the browser, build a `ForcedAligner` with `G2pM` + `PhonemizerZh` and the zh
