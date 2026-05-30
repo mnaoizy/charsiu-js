@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "author": "",
-  "homepage": "https://github.com/lingjzhu/charsiu",
+  "homepage": "https://github.com/mnaoizy/charsiu-js#readme",
   "keywords": [
     "forced-alignment",
     "phonetic",
@@ -96,5 +96,12 @@
     "build": "tsc",
     "prepublishOnly": "npm run build",
     "pretest": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mnaoizy/charsiu-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mnaoizy/charsiu-js/issues"
   }
 }
