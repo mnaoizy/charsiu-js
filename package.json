@@ -1,6 +1,6 @@
 {
   "name": "charsiu-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Neural phonetic forced aligner (wav2vec2) for Node and the browser — a JS port of charsiu. Aligns audio to a transcript at the phone and word level, fully client-side.",
   "type": "module",
   "license": "MIT",
