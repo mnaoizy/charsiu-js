@@ -55,16 +55,43 @@ window.__ready = getAligner('en').then(() => true);
 // --- minimal UI wiring (if the page has the controls) ---
 const $ = (id) => document.getElementById(id);
 
+// trim leading/trailing near-silence (RMS based) — real recordings have dead air
+// at the ends, which otherwise makes the first/last phones stretch to fill it.
+// Returns the trimmed waveform plus the leading offset (seconds) to re-base times.
+function trimSilence(wave, sr = 16000) {
+  const win = Math.floor(0.02 * sr);            // 20 ms windows
+  const n = Math.ceil(wave.length / win);
+  const rms = new Float32Array(n);
+  let peak = 0;
+  for (let i = 0; i < n; i++) {
+    let s = 0, c = 0;
+    for (let j = i * win; j < Math.min((i + 1) * win, wave.length); j++) { s += wave[j] * wave[j]; c++; }
+    rms[i] = Math.sqrt(s / Math.max(1, c));
+    peak = Math.max(peak, rms[i]);
+  }
+  const thr = Math.max(peak * 0.05, 1e-4);
+  let a = 0; while (a < n && rms[a] < thr) a++;
+  let b = n - 1; while (b > a && rms[b] < thr) b--;
+  if (a >= b) return { wave, offset: 0 };
+  const margin = Math.floor(0.05 * sr);         // keep 50 ms padding around speech
+  const start = Math.max(0, a * win - margin);
+  const end = Math.min(wave.length, (b + 1) * win + margin);
+  return { wave: wave.subarray(start, end), offset: start / sr };
+}
+
 // decode an audio ArrayBuffer and align it against the current transcript + lang
 async function alignBuffer(buf) {
   const status = $('status');
   const lang = $('lang') ? $('lang').value : 'en';
   status.textContent = 'aligning…';
   try {
-    const waveform = await decodeToMono16k(buf);
+    const full = await decodeToMono16k(buf);
+    const { wave, offset } = trimSilence(full);
     const aligner = await getAligner(lang);
-    const { phones, words } = await aligner.align(waveform, $('text').value);
-    renderTimeline(words, phones);
+    const { phones, words } = await aligner.align(wave, $('text').value);
+    // re-base times onto the original recording so the timeline matches playback
+    const shift = (segs) => segs.map(([s, e, l]) => [+(s + offset).toFixed(2), +(e + offset).toFixed(2), l]);
+    renderTimeline(shift(words), shift(phones));
     status.textContent = `done — ${words.length} words, ${phones.length} phones`;
   } catch (e) { status.textContent = 'error: ' + e.message; throw e; }
 }
