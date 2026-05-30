@@ -1,0 +1,87 @@
+{
+ "embedding.weight": {
+  "offset": 0,
+  "shape": [
+   5398,
+   64
+  ]
+ },
+ "lstm.weight_ih_l0": {
+  "offset": 345472,
+  "shape": [
+   128,
+   64
+  ]
+ },
+ "lstm.weight_hh_l0": {
+  "offset": 353664,
+  "shape": [
+   128,
+   32
+  ]
+ },
+ "lstm.bias_ih_l0": {
+  "offset": 357760,
+  "shape": [
+   128
+  ]
+ },
+ "lstm.bias_hh_l0": {
+  "offset": 357888,
+  "shape": [
+   128
+  ]
+ },
+ "lstm.weight_ih_l0_reverse": {
+  "offset": 358016,
+  "shape": [
+   128,
+   64
+  ]
+ },
+ "lstm.weight_hh_l0_reverse": {
+  "offset": 366208,
+  "shape": [
+   128,
+   32
+  ]
+ },
+ "lstm.bias_ih_l0_reverse": {
+  "offset": 370304,
+  "shape": [
+   128
+  ]
+ },
+ "lstm.bias_hh_l0_reverse": {
+  "offset": 370432,
+  "shape": [
+   128
+  ]
+ },
+ "logit_layer.0.weight": {
+  "offset": 370560,
+  "shape": [
+   32,
+   64
+  ]
+ },
+ "logit_layer.0.bias": {
+  "offset": 372608,
+  "shape": [
+   32
+  ]
+ },
+ "logit_layer.2.weight": {
+  "offset": 372640,
+  "shape": [
+   876,
+   32
+  ]
+ },
+ "logit_layer.2.bias": {
+  "offset": 400672,
+  "shape": [
+   876
+  ]
+ }
+}

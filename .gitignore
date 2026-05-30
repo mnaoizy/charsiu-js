@@ -1,0 +1,18 @@
+# dependencies & build output
+node_modules/
+.venv/
+dist/
+*.tgz
+
+# upstream charsiu clone (reference only; see ATTRIBUTION.md)
+charsiu_src/
+
+# acoustic models are large (~123/90 MB) — convert/quantize locally or host on HF Hub
+models/
+
+# intermediate audio (sample/*.wav are kept as test fixtures)
+sample/*.aiff
+
+# misc
+.DS_Store
+tsconfig.tsbuildinfo

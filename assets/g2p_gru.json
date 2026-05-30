@@ -1,0 +1,81 @@
+{
+ "enc_emb": {
+  "offset": 0,
+  "shape": [
+   29,
+   256
+  ]
+ },
+ "enc_w_ih": {
+  "offset": 7424,
+  "shape": [
+   768,
+   256
+  ]
+ },
+ "enc_w_hh": {
+  "offset": 204032,
+  "shape": [
+   768,
+   256
+  ]
+ },
+ "enc_b_ih": {
+  "offset": 400640,
+  "shape": [
+   768
+  ]
+ },
+ "enc_b_hh": {
+  "offset": 401408,
+  "shape": [
+   768
+  ]
+ },
+ "dec_emb": {
+  "offset": 402176,
+  "shape": [
+   74,
+   256
+  ]
+ },
+ "dec_w_ih": {
+  "offset": 421120,
+  "shape": [
+   768,
+   256
+  ]
+ },
+ "dec_w_hh": {
+  "offset": 617728,
+  "shape": [
+   768,
+   256
+  ]
+ },
+ "dec_b_ih": {
+  "offset": 814336,
+  "shape": [
+   768
+  ]
+ },
+ "dec_b_hh": {
+  "offset": 815104,
+  "shape": [
+   768
+  ]
+ },
+ "fc_w": {
+  "offset": 815872,
+  "shape": [
+   74,
+   256
+  ]
+ },
+ "fc_b": {
+  "offset": 834816,
+  "shape": [
+   74
+  ]
+ }
+}

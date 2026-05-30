@@ -1,0 +1,14 @@
+{
+  "comment": "Type-checks a consumer file against the BUILT dist .d.ts (run after build).",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2022",
+    "lib": ["es2022", "dom"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["test/types-check.mts"]
+}

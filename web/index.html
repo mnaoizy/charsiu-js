@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>charsiu-js — forced alignment in the browser</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.4rem; }
+  textarea { width: 100%; height: 3.5rem; font: inherit; }
+  .controls { display: flex; gap: .75rem; align-items: center; margin: .75rem 0; flex-wrap: wrap; }
+  button { font: inherit; padding: .4rem 1rem; cursor: pointer; }
+  #status { color: #888; }
+  .tier { position: relative; height: 2rem; margin: .4rem 0; background: #8881; border-radius: 4px; }
+  .seg { position: absolute; top: 0; height: 100%; box-sizing: border-box; border: 1px solid #0003;
+         font-size: 11px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .seg.w { background: #4a90d922; }
+  .seg.p { background: #d9534f22; }
+</style>
+</head>
+<body>
+  <h1>charsiu-js</h1>
+  <p>Neural forced alignment (wav2vec2) running fully client-side — no server. Quantized model ~123 MB.</p>
+  <label>Transcript<br><textarea id="text">the quick brown fox jumps over the lazy dog</textarea></label>
+  <div class="controls">
+    <input type="file" id="audio" accept="audio/*" />
+    <button id="run">Align</button>
+    <span id="status">uses sample/sample.wav if no file chosen</span>
+  </div>
+  <div id="out"></div>
+  <script type="module" src="/web/demo.mjs"></script>
+</body>
+</html>
