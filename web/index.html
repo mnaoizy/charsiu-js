@@ -11,6 +11,8 @@
   textarea { width: 100%; height: 3.5rem; font: inherit; }
   .controls { display: flex; gap: .75rem; align-items: center; margin: .75rem 0; flex-wrap: wrap; }
   button { font: inherit; padding: .4rem 1rem; cursor: pointer; }
+  button.recording { background: #d9534f; color: #fff; border-color: #d9534f; }
+  #playback { height: 2rem; }
   #status { color: #888; }
   .tier { position: relative; height: 2rem; margin: .4rem 0; background: #8881; border-radius: 4px; }
   .seg { position: absolute; top: 0; height: 100%; box-sizing: border-box; border: 1px solid #0003;
@@ -28,9 +30,13 @@
       <option value="en">English</option>
       <option value="zh">中文 (Mandarin)</option>
     </select>
+    <button id="record">🎙 Record</button>
     <input type="file" id="audio" accept="audio/*" />
     <button id="run">Align</button>
-    <span id="status">uses the bundled sample if no file chosen</span>
+  </div>
+  <div class="controls">
+    <audio id="playback" controls hidden></audio>
+    <span id="status">record yourself, or Align the bundled sample / an uploaded file</span>
   </div>
   <div id="out"></div>
   <script type="module" src="/web/demo.mjs"></script>

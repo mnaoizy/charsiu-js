@@ -54,24 +54,59 @@ window.__ready = getAligner('en').then(() => true);
 
 // --- minimal UI wiring (if the page has the controls) ---
 const $ = (id) => document.getElementById(id);
+
+// decode an audio ArrayBuffer and align it against the current transcript + lang
+async function alignBuffer(buf) {
+  const status = $('status');
+  const lang = $('lang') ? $('lang').value : 'en';
+  status.textContent = 'aligning…';
+  try {
+    const waveform = await decodeToMono16k(buf);
+    const aligner = await getAligner(lang);
+    const { phones, words } = await aligner.align(waveform, $('text').value);
+    renderTimeline(words, phones);
+    status.textContent = `done — ${words.length} words, ${phones.length} phones`;
+  } catch (e) { status.textContent = 'error: ' + e.message; throw e; }
+}
+
 if ($('lang')) {
   $('lang').onchange = () => { $('text').value = SAMPLES[$('lang').value].text; };
 }
+
+// Align: uploaded file, or the bundled sample if none chosen
 if ($('run')) {
   $('run').onclick = async () => {
-    const status = $('status');
+    const lang = $('lang') ? $('lang').value : 'en';
+    const file = $('audio').files[0];
+    const buf = file ? await file.arrayBuffer() : await fetch(SAMPLES[lang].wav).then((r) => r.arrayBuffer());
+    await alignBuffer(buf);
+  };
+}
+
+// Record from the microphone (localhost is a secure context, so getUserMedia works)
+let mediaRecorder = null, chunks = [], micStream = null;
+if ($('record')) {
+  $('record').onclick = async () => {
+    const btn = $('record');
+    if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); return; }
     try {
-      const lang = $('lang') ? $('lang').value : 'en';
-      status.textContent = 'aligning…';
-      const text = $('text').value;
-      const file = $('audio').files[0];
-      const buf = file ? await file.arrayBuffer() : await fetch(SAMPLES[lang].wav).then((r) => r.arrayBuffer());
-      const waveform = await decodeToMono16k(buf);
-      const aligner = await getAligner(lang);
-      const { phones, words } = await aligner.align(waveform, text);
-      renderTimeline(words, phones);
-      status.textContent = `done — ${words.length} words, ${phones.length} phones`;
-    } catch (e) { status.textContent = 'error: ' + e.message; throw e; }
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) { $('status').textContent = 'microphone error: ' + e.message; return; }
+    chunks = [];
+    mediaRecorder = new MediaRecorder(micStream);
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      micStream.getTracks().forEach((t) => t.stop());
+      btn.textContent = '🎙 Record';
+      btn.classList.remove('recording');
+      const blob = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+      if ($('playback')) { $('playback').src = URL.createObjectURL(blob); $('playback').hidden = false; }
+      await alignBuffer(await blob.arrayBuffer());
+    };
+    mediaRecorder.start();
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('recording');
+    $('status').textContent = 'recording… read the transcript aloud, then press Stop';
   };
 }
 
