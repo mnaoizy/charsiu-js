@@ -3,15 +3,13 @@ import * as ort from 'onnxruntime-node';
 import { G2pM } from '../dist/g2pm.js';
 import { PhonemizerZh } from '../dist/phonemize-zh.js';
 import { ForcedAligner } from '../dist/index.js';
-import { loadG2pmAssets } from '../dist/assets-node.js';
+import { loadG2pmAssets, loadWav16k } from '../dist/assets-node.js';
 import { fileURLToPath } from 'node:url';
-
-function readWav(p){const b=readFileSync(p);let o=12,d=0,l=0,c=1;while(o+8<=b.length){const id=b.toString('ascii',o,o+4),s=b.readUInt32LE(o+4);if(id==='fmt ')c=b.readUInt16LE(o+10);else if(id==='data'){d=o+8;l=s;}o+=8+s+(s&1);}const n=l/2/c,out=new Float32Array(n);for(let i=0;i<n;i++)out[i]=b.readInt16LE(d+i*2*c)/32768;return out;}
 
 const root = new URL('../', import.meta.url);
 const A = (f) => fileURLToPath(new URL(`assets/${f}`, root));
 const text = readFileSync(new URL('sample/zh_transcript.txt', root), 'utf8').trim();
-const wav = readWav(new URL('sample/zh_sample.wav', root).pathname);
+const wav = loadWav16k(new URL('sample/zh_sample.wav', root));
 const oracle = JSON.parse(readFileSync(new URL('sample/zh_align_oracle.json', root)));
 const oracleW = JSON.parse(readFileSync(new URL('sample/zh_align_oracle_words.json', root)));
 const spec = JSON.parse(readFileSync(new URL('sample/zh_align_spec.json', root)));

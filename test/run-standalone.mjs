@@ -3,26 +3,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createNodeAligner } from '../dist/aligner-node.js';
 import { toTextGrid } from '../dist/index.js';
-
-function readWavPCM16(path) {
-  const buf = readFileSync(path);
-  let off = 12, dataOff = 0, dataLen = 0, channels = 1;
-  while (off + 8 <= buf.length) {
-    const id = buf.toString('ascii', off, off + 4);
-    const size = buf.readUInt32LE(off + 4);
-    if (id === 'fmt ') channels = buf.readUInt16LE(off + 10);
-    else if (id === 'data') { dataOff = off + 8; dataLen = size; }
-    off += 8 + size + (size & 1);
-  }
-  const n = dataLen / 2 / channels;
-  const out = new Float32Array(n);
-  for (let i = 0; i < n; i++) out[i] = buf.readInt16LE(dataOff + i * 2 * channels) / 32768;
-  return out;
-}
+import { loadWav16k } from '../dist/assets-node.js';
 
 const root = new URL('../', import.meta.url);
 const text = readFileSync(new URL('sample/transcript.txt', root), 'utf8').trim();
-const waveform = readWavPCM16(new URL('sample/sample.wav', root).pathname);
+const waveform = loadWav16k(new URL('sample/sample.wav', root));
 const oracle = JSON.parse(readFileSync(new URL('sample/align_oracle.json', root)));
 const oracleWords = JSON.parse(readFileSync(new URL('sample/align_oracle_words.json', root)));
 const spec = JSON.parse(readFileSync(new URL('sample/align_spec.json', root)));

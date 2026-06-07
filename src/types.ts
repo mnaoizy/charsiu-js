@@ -33,6 +33,17 @@ export interface G2pmAssets {
   lstm: WeightBlob;
 }
 
+/** Turns text into a CTC target sequence (phone ids, no blanks) plus the
+ *  per-word phone grouping needed to recover word-level segments. */
+export interface CtcPhonemizerLike {
+  id2phone: Record<string, string>;
+  /** CTC blank/PAD id. */
+  blankIdx: number;
+  /** Silence id (or -1 if none). */
+  silIdx: number;
+  phonemize(text: string): { groups: string[][]; words: string[]; targetIds: number[]; groupLens: number[] };
+}
+
 /** Turns text into phone ids and maps phone segments back to words. */
 export interface PhonemizerLike {
   silIdx: number;

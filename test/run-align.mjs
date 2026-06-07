@@ -3,29 +3,11 @@
 import * as ort from 'onnxruntime-node';
 import { readFileSync } from 'node:fs';
 import { align } from '../dist/align.js';
-
-// --- minimal 16-bit PCM mono WAV reader -> Float32 in [-1, 1] ---
-function readWavPCM16(path) {
-  const buf = readFileSync(path);
-  if (buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE')
-    throw new Error('not a WAV file');
-  let off = 12, sampleRate = 0, dataOff = 0, dataLen = 0, bits = 16, channels = 1;
-  while (off + 8 <= buf.length) {
-    const id = buf.toString('ascii', off, off + 4);
-    const size = buf.readUInt32LE(off + 4);
-    if (id === 'fmt ') { channels = buf.readUInt16LE(off + 10); sampleRate = buf.readUInt32LE(off + 12); bits = buf.readUInt16LE(off + 22); }
-    else if (id === 'data') { dataOff = off + 8; dataLen = size; }
-    off += 8 + size + (size & 1);
-  }
-  if (bits !== 16) throw new Error(`expected 16-bit PCM, got ${bits}`);
-  const n = dataLen / 2 / channels;
-  const out = new Float32Array(n);
-  for (let i = 0; i < n; i++) out[i] = buf.readInt16LE(dataOff + i * 2 * channels) / 32768;
-  return { waveform: out, sampleRate };
-}
+import { loadWav16k } from '../dist/assets-node.js';
 
 const root = new URL('../', import.meta.url);
-const { waveform, sampleRate } = readWavPCM16(new URL('sample/sample.wav', root).pathname);
+const sampleRate = 16000; // loadWav16k guarantees 16 kHz
+const waveform = loadWav16k(new URL('sample/sample.wav', root));
 const spec = JSON.parse(readFileSync(new URL('sample/align_spec.json', root)));
 const oracle = JSON.parse(readFileSync(new URL('sample/align_oracle.json', root)));
 console.log(`audio: ${waveform.length} samples @ ${sampleRate}Hz (${(waveform.length / sampleRate).toFixed(2)}s)`);

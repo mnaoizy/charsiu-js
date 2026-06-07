@@ -29,6 +29,11 @@ export function loadPhoneVocabZh(baseUrl = './assets/'): Promise<Record<string, 
   return fetch(baseUrl + 'vocab_zh.json').then((r) => r.json());
 }
 
+// Japanese (OpenJTalk) phone->id vocab, matching the hubert phoneme-CTC model.
+export function loadPhoneVocabJa(baseUrl = './assets/'): Promise<Record<string, number>> {
+  return fetch(baseUrl + 'vocab_ja.json').then((r) => r.json());
+}
+
 // Decode any browser-supported audio file to 16 kHz mono Float32 in [-1, 1].
 export async function decodeToMono16k(arrayBuffer: ArrayBuffer): Promise<Float32Array> {
   const w = window as unknown as Record<string, unknown>;

@@ -23,10 +23,15 @@ os.makedirs(OUT, exist_ok=True)
 
 print(f"[1/6] loading config for {MODEL_ID}")
 config = AutoConfig.from_pretrained(MODEL_ID)
-# charsiu publishes architectures=["Wav2Vec2ForFrameClassification"]; the graph is
-# identical to CTC, so normalize it so every downstream loader agrees.
-config.architectures = ["Wav2Vec2ForCTC"]
-print("    model_type:", config.model_type, "| vocab/num_labels:", getattr(config, "vocab_size", None))
+# charsiu publishes architectures=["Wav2Vec2ForFrameClassification"], which
+# AutoModelForCTC doesn't recognize; its graph is identical to CTC, so rewrite it
+# to the CTC head. Repos that already expose a CTC architecture (e.g.
+# HubertForCTC) are left as-is — AutoModelForCTC dispatches on model_type anyway.
+arch = config.architectures or []
+if any("FrameClassification" in a for a in arch):
+    config.architectures = ["Wav2Vec2ForCTC"]
+print("    model_type:", config.model_type, "| arch:", config.architectures,
+      "| vocab/num_labels:", getattr(config, "vocab_size", None))
 
 print("[2/6] loading weights as Wav2Vec2ForCTC")
 model = AutoModelForCTC.from_pretrained(MODEL_ID, config=config)
@@ -44,9 +49,27 @@ except Exception as e:
     print("    (no feature extractor, using defaults)", e)
     fe_cfg = {"sampling_rate": 16000, "do_normalize": True, "return_attention_mask": False}
 
-# id -> phone label
-id2label = config.id2label if getattr(config, "id2label", None) else {}
-labels = {str(i): id2label.get(i, id2label.get(str(i), str(i))) for i in range(getattr(config, "vocab_size", len(id2label)))}
+# id -> phone label. Prefer config.id2label when it carries real names (charsiu
+# does); otherwise derive it from the CTC tokenizer vocab (phoneme->id), which is
+# exactly what the JS phone vocab needs too (e.g. HubertForCTC phoneme models that
+# ship vocab.json but leave id2label unset).
+import re
+def _looks_real(d):
+    # Reject transformers' auto placeholders (LABEL_0, …) and stringified ids.
+    def real(v):
+        s = str(v)
+        return not re.fullmatch(r"LABEL_\d+", s) and not s.lstrip("-").isdigit()
+    return bool(d) and any(real(v) for v in d.values())
+
+cfg_labels = getattr(config, "id2label", None)
+if _looks_real(cfg_labels):
+    id2label = {int(k): v for k, v in cfg_labels.items()}
+else:
+    from transformers import AutoTokenizer
+    tok = AutoTokenizer.from_pretrained(MODEL_ID)
+    id2label = {i: t for t, i in tok.get_vocab().items()}
+    print(f"    (config has no labels; using tokenizer vocab: {len(id2label)} tokens)")
+labels = {str(i): id2label.get(i, str(i)) for i in range(getattr(config, "vocab_size", len(id2label)))}
 with open(os.path.join(OUT, "labels.json"), "w") as f:
     json.dump({"id2label": labels, "feature_extractor": fe_cfg, "model_id": MODEL_ID}, f, indent=2, ensure_ascii=False)
 print(f"    saved {len(labels)} labels + feature-extractor cfg")

@@ -1,10 +1,10 @@
 {
   "name": "charsiu-js",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Neural phonetic forced aligner (wav2vec2) for Node and the browser — a JS port of charsiu. Aligns audio to a transcript at the phone and word level, fully client-side.",
   "type": "module",
   "license": "MIT",
-  "author": "",
+  "author": "Masakazu Naoi (https://github.com/mnaoizy)",
   "homepage": "https://github.com/mnaoizy/charsiu-js#readme",
   "keywords": [
     "forced-alignment",
@@ -62,13 +62,17 @@
   },
   "peerDependencies": {
     "onnxruntime-node": ">=1.20.0",
-    "onnxruntime-web": ">=1.20.0"
+    "onnxruntime-web": ">=1.20.0",
+    "tokana": ">=0.1.2"
   },
   "peerDependenciesMeta": {
     "onnxruntime-node": {
       "optional": true
     },
     "onnxruntime-web": {
+      "optional": true
+    },
+    "tokana": {
       "optional": true
     }
   },
@@ -77,25 +81,29 @@
     "onnxruntime-node": "^1.26.0",
     "onnxruntime-web": "^1.26.0",
     "playwright": "^1.60.0",
+    "tokana": "^0.1.2",
     "typescript": "^5.9.3"
   },
   "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "serve": "node test/serve.mjs",
     "convert": "python scripts/convert.py",
     "quantize": "python scripts/quantize.py",
     "export-g2p": "python scripts/export_g2p.py",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "export-g2pm": "python scripts/export_g2pm.py",
+    "setup-dict": "node scripts/setup-dict.mjs",
     "test:onnx": "node test/run-onnx.mjs",
     "test:align": "node test/run-align.mjs",
     "test:g2p": "node test/run-g2p.mjs",
     "test:g2pm": "node test/run-g2pm.mjs",
     "test:standalone": "node test/run-standalone.mjs",
     "test:standalone-zh": "node test/run-standalone-zh.mjs",
+    "test:standalone-ja": "node test/run-standalone-ja.mjs",
     "test:browser": "node test/run-browser.mjs",
-    "test": "npm run test:onnx && npm run test:g2p && npm run test:g2pm && npm run test:standalone && npm run test:standalone-zh && npm run test:browser && tsc -p tsconfig.test.json",
-    "serve": "node test/serve.mjs",
-    "build": "tsc",
-    "prepublishOnly": "npm run build",
-    "pretest": "npm run build"
+    "test": "npm run test:onnx && npm run test:g2p && npm run test:g2pm && npm run test:standalone && npm run test:standalone-zh && npm run test:standalone-ja && npm run test:browser && tsc -p tsconfig.test.json",
+    "pretest": "npm run build",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",

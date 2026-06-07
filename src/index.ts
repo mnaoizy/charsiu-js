@@ -7,7 +7,16 @@ import type { Segment, PhonemizerLike, AlignSession, OrtLike } from './types.js'
 export { G2p, normalizeNumbers } from './g2p.js';
 export { PhonemizerEn } from './phonemize-en.js';
 export { normalize, softmaxRows, forcedAlign, seq2duration, align } from './align.js';
-export type { Segment, PhonemizerLike, AlignSpec, G2pAssets, G2pmAssets } from './types.js';
+export type { Segment, PhonemizerLike, CtcPhonemizerLike, AlignSpec, G2pAssets, G2pmAssets } from './types.js';
+
+// Japanese / CTC building blocks (runtime-agnostic; browser users wire these
+// with onnxruntime-web + tokana, Node users use createNodeAlignerJa).
+export { kanaToPhonemes } from './g2p-ja.js';
+export { PhonemizerJa } from './phonemize-ja.js';
+export { logSoftmaxRows, ctcForcedAlign, ctcSegments, ctcWordSegments, ctcFrameAlign, alignCtc } from './align-ctc.js';
+export { CtcForcedAligner } from './aligner-ctc.js';
+export type { CtcAlignSpec } from './align-ctc.js';
+export type { CtcForcedAlignerOptions, CtcAlignResult } from './aligner-ctc.js';
 
 export interface AlignResult {
   /** Phone-level segments; `[SIL]` marks silence. */

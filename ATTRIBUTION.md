@@ -24,6 +24,24 @@ algorithm, models, and g2p resources are derived from the projects below.
   Copyright (c) Carnegie Mellon University.
 - Bundled (first pronunciation per word) as `assets/cmudict.json`.
 
-## g2pM (for planned Mandarin support)
-- https://github.com/kakaobrain/g2pM — used as the reference for Mandarin
-  grapheme-to-phoneme; not yet ported.
+## g2pM (Mandarin)
+- https://github.com/kakaobrain/g2pM — the reference for Mandarin
+  grapheme-to-phoneme. `src/g2pm.ts` ports g2pM (CEDICT lookup + a BiLSTM that
+  disambiguates polyphonic characters); weights/data are bundled as
+  `assets/g2pm_*`. See the g2pM repository (and CC-CEDICT) for their licenses.
+
+## Japanese
+- **tokana** — https://github.com/mnaoizy/tokana — morphological analysis, used
+  via the optional `tokana` peer dependency by `createNodeAlignerJa`.
+- **mecab-ipadic** — the IPADIC dictionary, compiled with tokana for tokenization
+  (not bundled; built locally via `npm run setup-dict`). Distributed under its own
+  permissive license; see the mecab-ipadic source.
+- **mecab-ipadic-NEologd** — https://github.com/neologd/mecab-ipadic-neologd —
+  Apache License 2.0. Optional larger dictionary (`npm run setup-dict -- neologd`).
+- **prj-beatrice/japanese-hubert-base-phoneme-ctc** —
+  https://huggingface.co/prj-beatrice/japanese-hubert-base-phoneme-ctc — Apache
+  License 2.0. The Japanese acoustic model (HuBERT phoneme-CTC); the ONNX export is
+  a conversion of these weights. Fine-tuned from `rinna/japanese-hubert-base`
+  (Apache-2.0); phoneme labels were produced with pyopenjtalk-plus.
+- **OpenJTalk / pyopenjtalk-plus** — the reference for the OpenJTalk phone set used
+  by `src/g2p-ja.ts`, and used at dev time to generate the Japanese phoneme oracle.

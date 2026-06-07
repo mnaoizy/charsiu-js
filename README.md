@@ -26,6 +26,7 @@ npm install charsiu-js
 # plus the onnxruntime for your runtime:
 npm install onnxruntime-node    # Node
 npm install onnxruntime-web     # browser bundlers
+npm install tokana              # Japanese only (morphological analysis)
 ```
 
 Written in TypeScript; ships compiled ESM + `.d.ts`, so it's type-safe out of the box.
@@ -57,6 +58,7 @@ const aligner = await createNodeAligner();
 //   createNodeAligner({ modelUrl: 'https://…/model_quantized.onnx' })
 
 // waveform: Float32Array, 16 kHz mono, samples in [-1, 1]
+// (read a 16 kHz mono WAV with `loadWav16k` from 'charsiu-js/assets-node')
 const { phones, words } = await aligner.align(waveform, 'the quick brown fox');
 // phones: [[start, end, 'DH'], ...]   words: [[start, end, 'the'], ...]
 ```
@@ -102,8 +104,10 @@ model on the Hub.)
 - Lower-level building blocks are exported too: `G2p`, `PhonemizerEn`, `normalize`,
   `softmaxRows`, `forcedAlign`, `seq2duration`.
 
-Input must be **16 kHz mono**. In the browser, `decodeToMono16k` handles decoding
-and resampling; in Node, resample yourself (e.g. with the model's expected rate).
+Input must be **16 kHz mono**. In the browser, `decodeToMono16k` (from
+`charsiu-js/assets-web`) decodes any audio file and resamples it. In Node,
+`loadWav16k(path)` (from `charsiu-js/assets-node`) reads a 16 kHz mono 16-bit PCM
+WAV; it does **not** resample, so convert other sample rates / formats first.
 
 ## Verification
 
@@ -120,6 +124,7 @@ npm test
 | `test:g2pm` | Mandarin g2p == g2pM (10/10, incl. polyphone disambiguation) |
 | `test:standalone` | English text→phones+words == charsiu oracle (Node) |
 | `test:standalone-zh` | Mandarin text→phones+words == charsiu oracle (Node) |
+| `test:standalone-ja` | Japanese text→phones+words == pyopenjtalk oracle (Node; skipped without the model + dict) |
 | `test:browser` | English + Mandarin alignment in headless Chrome via onnxruntime-web |
 
 `npm test` also type-checks the public API against the built `.d.ts` as a consumer.
@@ -140,6 +145,31 @@ const zh = await createNodeAlignerZh();   // model auto-downloads on first use
 const { phones, words } = await zh.align(waveform, '快速的棕色狐狸');
 // phones: [[0, .08,'k'], [.08,.22,'uai4'], …]   words: [[0,.22,'快'], …]
 ```
+
+- **Japanese** — works end-to-end, with a different stack from EN/ZH: morphology
+  uses [tokana](https://github.com/mnaoizy/tokana) (an **optional** peer dependency)
+  over an IPADIC dictionary; readings are turned into OpenJTalk phonemes
+  (`g2p-ja.ts`) and aligned with **CTC forced alignment** (`align-ctc.ts`, not the
+  DTW used for EN/ZH) against
+  [`prj-beatrice/japanese-hubert-base-phoneme-ctc`](https://huggingface.co/prj-beatrice/japanese-hubert-base-phoneme-ctc)
+  (Apache-2.0, CTC, 20 ms, ~123 MB quantized). Vowel devoicing (OpenJTalk's
+  `U`/`I`) is context-dependent and emitted as plain `u`/`i` — negligible for
+  alignment.
+
+```js
+import { createNodeAlignerJa } from 'charsiu-js';
+// The model auto-downloads from the Hub on first use (like EN/ZH). You only need a
+// tokana-compiled dictionary built once with `npm run setup-dict` (IPADIC; add
+// `-- neologd` for a much larger lexicon — proper nouns, neologisms). Bring your
+// own model with modelPath/modelUrl.
+const ja = await createNodeAlignerJa({ dicPath: './models/ipadic-dict' });
+const { phones, words } = await ja.align(waveform, '音声認識のテストです');
+// phones: [[0,.04,'[SIL]'],[.04,.12,'o'],[.12,.28,'N'],…]   words: [[…,'音声'],…]
+```
+
+  If you already have the reading, the phonemizer is dependency-free:
+  `kanaToPhonemes('オンセイニンシキ')` (pure JS, no tokana/dictionary) gives the
+  phone sequence directly.
 
 ## Model setup (custom / your own models)
 
@@ -165,7 +195,10 @@ const session = await ort.InferenceSession.create('/zh_model_quantized.onnx');
 const aligner = new ForcedAligner({ session, ort, phonemizer });
 ```
 
-The bundled demo (`npm run serve`) has an English/Mandarin toggle.
+The bundled demo (`npm run serve`) has an English / Mandarin / Japanese toggle.
+For Japanese it shows a download/load progress bar (the model and dictionary are
+large) and a dictionary selector — **standard** (IPADIC ~12 MB) or **extended**
+(NEologd ~190 MB, built with `npm run setup-dict -- neologd`).
 
 ## How it works / internals
 
@@ -191,6 +224,11 @@ python -m venv .venv
 
 The g2p assets in `assets/` are generated from these (`npm run export-g2p`); the
 oracle JSONs the JS tests compare against are produced by `scripts/*_oracle.py`.
+
+For Japanese, also build the dictionary with `npm run setup-dict` (downloads and
+compiles mecab-ipadic with tokana; add `-- neologd` for the larger NEologd
+lexicon). The Japanese g2p oracle uses `pyopenjtalk-plus` (`pip install
+pyopenjtalk-plus`).
 
 ## License
 
